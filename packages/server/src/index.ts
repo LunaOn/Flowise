@@ -98,6 +98,7 @@ export class App {
         }
 
         const upload = multer({ dest: `${path.join(__dirname, '..', 'uploads')}/` })
+        console.info("start apis")
 
         // ----------------------------------------
         // Nodes
@@ -105,6 +106,7 @@ export class App {
 
         // Get all component nodes
         this.app.get('/api/v1/nodes', (req: Request, res: Response) => {
+            console.info("Get all component nodes")
             const returnData = []
             for (const nodeName in this.nodesPool.componentNodes) {
                 const clonedNode = cloneDeep(this.nodesPool.componentNodes[nodeName])
@@ -115,6 +117,7 @@ export class App {
 
         // Get specific component node via name
         this.app.get('/api/v1/nodes/:name', (req: Request, res: Response) => {
+            console.info("Get specific component node via name")
             if (Object.prototype.hasOwnProperty.call(this.nodesPool.componentNodes, req.params.name)) {
                 return res.json(this.nodesPool.componentNodes[req.params.name])
             } else {
@@ -124,6 +127,7 @@ export class App {
 
         // Returns specific component node icon via name
         this.app.get('/api/v1/node-icon/:name', (req: Request, res: Response) => {
+            console.info("Returns specific component node icon via name")
             if (Object.prototype.hasOwnProperty.call(this.nodesPool.componentNodes, req.params.name)) {
                 const nodeInstance = this.nodesPool.componentNodes[req.params.name]
                 if (nodeInstance.icon === undefined) {
@@ -147,12 +151,14 @@ export class App {
 
         // Get all chatflows
         this.app.get('/api/v1/chatflows', async (req: Request, res: Response) => {
+            console.info("Get all chatflows")
             const chatflows: IChatFlow[] = await this.AppDataSource.getRepository(ChatFlow).find()
             return res.json(chatflows)
         })
 
         // Get specific chatflow via id
         this.app.get('/api/v1/chatflows/:id', async (req: Request, res: Response) => {
+            console.info("Get specific chatflow via "+req.params.id)
             const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
                 id: req.params.id
             })
@@ -162,6 +168,7 @@ export class App {
 
         // Save chatflow
         this.app.post('/api/v1/chatflows', async (req: Request, res: Response) => {
+            console.info("Save chatflow")
             const body = req.body
             const newChatFlow = new ChatFlow()
             Object.assign(newChatFlow, body)
@@ -174,6 +181,7 @@ export class App {
 
         // Update chatflow
         this.app.put('/api/v1/chatflows/:id', async (req: Request, res: Response) => {
+            console.info("Update chatflow")
             const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
                 id: req.params.id
             })
@@ -198,12 +206,14 @@ export class App {
 
         // Delete chatflow via id
         this.app.delete('/api/v1/chatflows/:id', async (req: Request, res: Response) => {
+            console.info("Delete chatflow via id")
             const results = await this.AppDataSource.getRepository(ChatFlow).delete({ id: req.params.id })
             return res.json(results)
         })
 
         // Check if chatflow valid for streaming
         this.app.get('/api/v1/chatflows-streaming/:id', async (req: Request, res: Response) => {
+            console.info("Check if chatflow valid for streaming")
             const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
                 id: req.params.id
             })
@@ -232,26 +242,31 @@ export class App {
 
         // Get all chatmessages from chatflowid
         this.app.get('/api/v1/chatmessage/:id', async (req: Request, res: Response) => {
+            console.info("Get all chatmessages from chatflowid")
             const chatmessages = await this.AppDataSource.getRepository(ChatMessage).findBy({
                 chatflowid: req.params.id
             })
+            console.info("chatmessages: ",chatmessages)
             return res.json(chatmessages)
         })
 
         // Add chatmessages for chatflowid
         this.app.post('/api/v1/chatmessage/:id', async (req: Request, res: Response) => {
+            console.info("Add chatmessages for chatflowid")
             const body = req.body
             const newChatMessage = new ChatMessage()
             Object.assign(newChatMessage, body)
 
             const chatmessage = this.AppDataSource.getRepository(ChatMessage).create(newChatMessage)
             const results = await this.AppDataSource.getRepository(ChatMessage).save(chatmessage)
+            console.info("body: ",req.body)
 
             return res.json(results)
         })
 
         // Delete all chatmessages from chatflowid
         this.app.delete('/api/v1/chatmessage/:id', async (req: Request, res: Response) => {
+            console.info("Delete all chatmessages from chatflowid")
             const results = await this.AppDataSource.getRepository(ChatMessage).delete({ chatflowid: req.params.id })
             return res.json(results)
         })
@@ -261,6 +276,7 @@ export class App {
         // ----------------------------------------
 
         this.app.get('/api/v1/flow-config/:id', async (req: Request, res: Response) => {
+            console.info("Configuration")
             const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
                 id: req.params.id
             })
@@ -277,6 +293,7 @@ export class App {
         // ----------------------------------------
 
         this.app.get('/api/v1/database/export', async (req: Request, res: Response) => {
+            console.info("Export Load Chatflow & ChatMessage & Apikeys")
             const chatmessages = await this.AppDataSource.getRepository(ChatMessage).find()
             const chatflows = await this.AppDataSource.getRepository(ChatFlow).find()
             const apikeys = await getAPIKeys()
@@ -551,7 +568,6 @@ export class App {
                     !isStartNodeDependOnInput(this.chatflowPool.activeChatflows[chatflowid].startingNodes)
                 )
             }
-
             if (process.env.EXECUTION_MODE === 'child') {
                 if (isRebuildNeeded()) {
                     nodeToExecuteData = this.chatflowPool.activeChatflows[chatflowid].endingNodeData
@@ -629,11 +645,9 @@ export class App {
                     const startingNodes = nodes.filter((nd) => startingNodeIds.includes(nd.id))
                     this.chatflowPool.add(chatflowid, nodeToExecuteData, startingNodes, incomingInput?.overrideConfig)
                 }
-
                 const nodeInstanceFilePath = this.nodesPool.componentNodes[nodeToExecuteData.name].filePath as string
                 const nodeModule = await import(nodeInstanceFilePath)
                 const nodeInstance = new nodeModule.nodeClass()
-
                 const result = isStreamValid
                     ? await nodeInstance.run(nodeToExecuteData, incomingInput.question, {
                           chatHistory: incomingInput.history,

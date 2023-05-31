@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useSelector } from 'react-redux'
-import PropTypes from 'prop-types'
+import PropTypes, { bool } from 'prop-types'
 import socketIOClient from 'socket.io-client'
 import { cloneDeep } from 'lodash'
 import rehypeMathjax from 'rehype-mathjax'
@@ -93,15 +93,23 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault()
-
+        console.info(messages)
         if (userInput.trim() === '') {
             return
         }
-
+        var genUserInput = false
+        if (userInput === '\\it') {
+            genUserInput = true
+        }
         setLoading(true)
-        setMessages((prevMessages) => [...prevMessages, { message: userInput, type: 'userMessage' }])
-        addChatMessage(userInput, 'userMessage')
-
+        if (!genUserInput) {
+            setMessages((prevMessages) => [...prevMessages, { message: userInput, type: 'userMessage' }])
+        }
+        console.info('userInput')
+        console.info(userInput)
+        if (!genUserInput) {
+            addChatMessage(userInput, 'userMessage')
+        }
         // Send user question and history to API
         try {
             const params = {
@@ -111,13 +119,20 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
             if (isChatFlowAvailableToStream) params.socketIOClientId = socketIOClientId
 
             const response = await predictionApi.sendMessageAndGetPrediction(chatflowid, params)
-
+            console.info('response')
+            console.info(response.data)
             if (response.data) {
                 const data = response.data
-                if (!isChatFlowAvailableToStream) setMessages((prevMessages) => [...prevMessages, { message: data, type: 'apiMessage' }])
-                addChatMessage(data, 'apiMessage')
-                setLoading(false)
-                setUserInput('')
+                if (!isChatFlowAvailableToStream && !genUserInput)
+                    setMessages((prevMessages) => [...prevMessages, { message: data, type: 'apiMessage' }])
+                if (genUserInput) {
+                    setLoading(false)
+                    setUserInput(data)
+                } else {
+                    addChatMessage(data, 'apiMessage')
+                    setLoading(false)
+                    setUserInput('')
+                }
                 setTimeout(() => {
                     inputRef.current?.focus()
                     scrollToBottom()
