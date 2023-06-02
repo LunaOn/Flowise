@@ -30,14 +30,15 @@
         "express": "^4.17.3",
         "form-data": "^4.0.0",
         "graphql": "^16.6.0",
-        "langchain": "^0.0.82",
+        "langchain": "^0.0.88",
         "linkifyjs": "^4.1.1",
         "mammoth": "^1.5.1",
         "moment": "^2.29.3",
         "node-fetch": "^2.6.11",
         "pdf-parse": "^1.1.1",
         "weaviate-ts-client": "^1.1.0",
-        "ws": "^8.9.0"
+        "ws": "^8.9.0",
+        "zep-js": "^0.2.6"
     },
     "devDependencies": {
         "@types/gulp": "4.0.9",

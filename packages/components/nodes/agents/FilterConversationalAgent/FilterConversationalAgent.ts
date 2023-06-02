@@ -5,6 +5,8 @@ import { BaseChatMemory, ChatMessageHistory } from 'langchain/memory'
 import { getBaseClasses } from '../../../src/utils'
 import { AIChatMessage, HumanChatMessage } from 'langchain/schema'
 import { BaseLanguageModel } from 'langchain/base_language'
+import { Memory,Message,ZepClient } from '@getzep/zep-js';
+import {ZepMemory,ZepMemoryInput} from 'langchain/memory/zep'
 
 class FilterConversationalAgent_Agents implements INode {
     label: string
@@ -97,24 +99,51 @@ class FilterConversationalAgent_Agents implements INode {
         if (options && options.chatHistory) {
             const chatHistory = []
             const histories: IMessage[] = options.chatHistory
-
-            for (const message of histories) {
-                if(message.message === '\\it'){
-                    // if(!input.startsWith('请将以下文本翻译成英文：')){
-                    //     input = '请将以下文本翻译成英文：'+input
-                    // }
-                    continue
+            // for (const message of histories) {
+            //     if(message.message === '\\it'){
+            //         // if(!input.startsWith('请将以下文本翻译成英文：')){
+            //         //     input = '请将以下文本翻译成英文：'+input
+            //         // }
+            //         continue
+            //     }
+            //     if (message.type === 'apiMessage') {
+            //         chatHistory.push(new AIChatMessage(message.message))
+            //     } else if (message.type === 'userMessage') {
+            //         chatHistory.push(new HumanChatMessage(message.message))
+            //     }
+            // }
+            for(const message of histories){
+                if(message.type === 'apiMessage'){
+                    chatHistory.push({
+                        "role":"ai",
+                        "content":message.message
+                    })
                 }
-                if (message.type === 'apiMessage') {
-                    chatHistory.push(new AIChatMessage(message.message))
-                } else if (message.type === 'userMessage') {
-                    chatHistory.push(new HumanChatMessage(message.message))
+                else if(message.type === "userMessage"){
+                    chatHistory.push({
+                        "role":"human",
+                        "content":message.message
+                    })
                 }
             }
-            memory.chatHistory = new ChatMessageHistory(chatHistory)
-            executor.memory = memory
+            const messages = chatHistory.map(
+                ({role,content})=> new Message({role,content})
+            )
+            const zepMemory = new ZepMemory({
+                baseURL:"http://localhost:8000",
+                sessionId:'default'
+            })
+            // memory.chatHistory = new ChatMessageHistory(zepMemory)
+            executor.memory = zepMemory
         }
+        console.log('executor.memory')
+        console.log(executor.memory)
+        console.log(JSON.stringify(executor.memory))
+        console.log('input')
+        console.log(input)
         const result = await executor.call({ input })
+        console.log('output')
+        console.log(JSON.stringify(result?.output))
         return result?.output
     }
 }

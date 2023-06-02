@@ -119,8 +119,6 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
             if (isChatFlowAvailableToStream) params.socketIOClientId = socketIOClientId
 
             const response = await predictionApi.sendMessageAndGetPrediction(chatflowid, params)
-            console.info('response')
-            console.info(response.data)
             if (response.data) {
                 const data = response.data
                 if (!isChatFlowAvailableToStream && !genUserInput)
