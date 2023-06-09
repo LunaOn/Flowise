@@ -94,14 +94,14 @@ class ZepMemory_Memory implements INode {
 
         let tmpFunc = zep.loadMemoryVariables;
         zep.loadMemoryVariables = async (values) => {
-            let data = await tmpFunc.bind(zep)(values);
-            if (zep.returnMessages) {
-                // fix: Not found for summary
-                if (data.length) {
-                    const memory = await zep.zepClient.getMemory(zep.sessionId, 10);
-                    if (memory?.summary) {
-                        data[zep.memoryKey].unshift(new SystemChatMessage(memory?.summary.content));
-                    }
+            let data = await tmpFunc.bind(zep, values)();
+            // fix: Not found for summary
+            if (zep.returnMessages && data[zep.memoryKey] && data[zep.memoryKey].length) {
+                const memory = await zep.zepClient.getMemory(zep.sessionId, 10);
+                // console.log('memory?', memory);
+                if (memory?.summary) {
+                    // console.log('get summary:', memory.summary.content);
+                    data[zep.memoryKey].unshift(new SystemChatMessage(memory?.summary.content));
                 }
             }
             console.log('data:', data)
